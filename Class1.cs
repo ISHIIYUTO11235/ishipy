@@ -92,7 +92,50 @@ public void Fit(double[] x,double[] y)
 
 public class MultipleRegression//https://www.youtube.com/watch?v=UWFTIEIruyc 偏微分の参考資料
 {
-    
+    private double[] weights;// w0 , w1 , w2.....をまとめた配列
+    public double[] GetWeight()
+    {
+        return weights;
+    }
+    public void SetWeights(double[] weights)//GetWeightで出力してから配列の構造を確認してSetできるようにしてみる。gemini的には新しい拡張用のクラスを作った方がいいと言っているが、勉強のためなので直接いじれるようにしておく
+    {//dropoutを実装できるくらいのライブラリにしたい
+        this.weights = weights; 
+    }
+
+    public void Fit(double[,] x, double[] y)
+    {
+        int n = x.GetLength(0);//データ数
+        int features = x.GetLength(1);//説明変数の数
+
+        double[,] xDataBias = new double[n, features+1];
+        for(int i = 0; i <= n; i++)
+        {
+            xDataBias[i,0] = 1.0;//配列の端っこに1を入れまくるループ　切片になるところ
+            for(int j = 0; j < features; j++)
+            {
+                xDataBias[i,j+1]=x[i,j];//1が入った後の元のデータをこピル
+            }
+        }
+
+        double[,] yDataMatrix = new double[n,1];
+        for(int i = 0;i < n; i++)//たてに変えて行列計算に適用できるようにする
+        {
+            yDataMatrix[i,0] = y[i]; 
+        }
+        Matrix X = new Matrix(xDataBias);
+        Matrix Y = new Matrix(yDataMatrix);
+
+        Matrix Xt = X.Transpose();
+        Matrix XtX = Xt.Multiply(X);
+        Matrix XtX_Inverse = XtX.Inverse();
+        Matrix XtY = Xt.Multiply(Y);
+
+        Matrix W = XtX_Inverse.Multiply(XtY);
+
+
+
+    }
+
 }
 
 public class Matrix
@@ -126,7 +169,7 @@ public class Matrix
         return new Matrix(result);
     } 
 
-    public Matrix Multipy(Matrix other)//行列の掛け算 自分と引き数に入った行列オブジェクトを賭けれる
+    public Matrix Multiply(Matrix other)//行列の掛け算 自分と引き数に入った行列オブジェクトを賭けれる
 {//https://youtu.be/ltFl0FpLTzQ?si=94Q8VLNACz9UjjMl  参考資料
     if(this.cols != other.rows){
         Console.WriteLine("Multiplyできない。サイズがちがうから");
@@ -225,6 +268,8 @@ public class Matrix
  
     
 }
+
+
 
 
 
