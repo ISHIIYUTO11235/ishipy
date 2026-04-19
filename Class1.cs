@@ -92,7 +92,7 @@ public void Fit(double[] x,double[] y)
 
 public class MultipleRegression//https://www.youtube.com/watch?v=UWFTIEIruyc 偏微分の参考資料
 {
-    private double[] weights;// w0 , w1 , w2.....をまとめた配列
+    private double[] weights= new double[0];// w0 , w1 , w2.....をまとめた配列 
     public double[] GetWeight()
     {
         return weights;
@@ -108,7 +108,7 @@ public class MultipleRegression//https://www.youtube.com/watch?v=UWFTIEIruyc 偏
         int features = x.GetLength(1);//説明変数の数
 
         double[,] xDataBias = new double[n, features+1];
-        for(int i = 0; i <= n; i++)
+        for(int i = 0; i < n; i++)
         {
             xDataBias[i,0] = 1.0;//配列の端っこに1を入れまくるループ　切片になるところ
             for(int j = 0; j < features; j++)
@@ -132,11 +132,32 @@ public class MultipleRegression//https://www.youtube.com/watch?v=UWFTIEIruyc 偏
 
         Matrix W = XtX_Inverse.Multiply(XtY);
 
+        weights = new double[features + 1];//説明変数に切片の数だけweightsがあるのでそれを1時配列に入れとく　使いやすくし徳
+
+        for(int i = 0; i<weights.Length; i++)//これ
+        {
+            weights[i] = W.data[i,0];
+        }
+        
+        }//fit終わり
+
+        public double Predict(double[] x)//短回帰同様にpredict関数で使える様にしておく
+    {
+        double predictedY = weights[0];
+        for(int i = 0; i<x.Length; i++)
+        {
+            predictedY += weights[i+1]*x[i];//内席を求めればいい。ここも内積っぽいのでマトリックスをつかってもっと効率化できる気がするが今回はこれでいいや
+        }
+        return predictedY;
+    }
+
+
+
 
 
     }
 
-}
+
 
 public class Matrix
 {
@@ -213,7 +234,7 @@ public class Matrix
         // 拡大係数行列を作る（左半分に元のデータ、右半分に「単位行列」をくっつける）
         double[,] a = new double[n, n * 2]; 
 
-        // 初期化（右半分には、ナナメに「1」が並ぶ単位行列をセット）
+        // 初期化（右半分には、ナナメに「1」が並ぶ単位行列をセット ）
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < n; j++)
@@ -279,7 +300,7 @@ class Program//こっからてすとこーど
 {
     static void Main()
     {
-       
+       /*
         var model = new SimpleLinearRegression();
 
         double[] xData = { 1.0, 2.0, 3.0, 4.0, 5.0 };
@@ -290,6 +311,38 @@ class Program//こっからてすとこーど
         Console.WriteLine($"計算されたXの平均値: {model.GetMeanX()}");
         
         Console.WriteLine(model.Predict(3.5));
+*/
+        var model = new MultipleRegression();
+
+        // テストデータ: X行列 [経過年数(年), 走行距離(万km)]
+        double[,] xData = {
+            { 20.0, 5.0 },  // 20年落ち, 5万km
+            { 25.0, 10.0 }, // 25年落ち, 10万km
+            { 15.0, 3.0 },  // 15年落ち, 3万km
+            { 30.0, 8.0 },  // 30年落ち, 8万km
+            { 22.0, 12.0 }  // 22年落ち, 12万km
+        };
+
+        // テストデータ: Y配列 [車両価格(万円)]
+        double[] yData = { 850.0, 600.0, 1100.0, 500.0, 480.0 };
+
+        Console.WriteLine("--- 重回帰分析の学習を開始 ---");
+        // 学習を実行（ここでMatrixクラスの逆行列や掛け算がフル稼働します！）
+        model.Fit(xData, yData);
+
+        // 学習結果（重み）を取得して表示
+        double[] w = model.GetWeight();
+        Console.WriteLine($"ベース価格・切片(w0) : {w[0]:F2} 万円");
+        Console.WriteLine($"経過年数の重み(w1)   : {w[1]:F2} 万円/年");
+        Console.WriteLine($"走行距離の重み(w2)   : {w[2]:F2} 万円/万km");
+
+        Console.WriteLine("\n--- 未知の車両価格を予測 ---");
+        // 新しいデータ: 24年落ち、走行距離 7万km の車両を見つけた場合
+        double[] targetCar = { 24.0, 7.0 };
+        double predictedPrice = model.Predict(targetCar);
         
+        Console.WriteLine($"予測価格: {predictedPrice:F2} 万円");
+        
+        Console.ReadLine();
     }
 }
