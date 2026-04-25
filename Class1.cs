@@ -92,13 +92,14 @@ public void Fit(double[] x,double[] y)
 
 public class MultipleRegression//https://www.youtube.com/watch?v=UWFTIEIruyc 偏微分の参考資料
 {
+
     private double[] weights= new double[0];// w0 , w1 , w2.....をまとめた配列 
     public double[] GetWeight()
     {
         return weights;
     }
     public void SetWeights(double[] weights)//GetWeightで出力してから配列の構造を確認してSetできるようにしてみる。gemini的には新しい拡張用のクラスを作った方がいいと言っているが、勉強のためなので直接いじれるようにしておく
-    {//dropoutを実装できるくらいのライブラリにしたい
+    {//dropoutを実装できるくらいのライブラリにしたい 全然和からん
         this.weights = weights; 
     }
 
@@ -155,6 +156,50 @@ public class MultipleRegression//https://www.youtube.com/watch?v=UWFTIEIruyc 偏
 
 
 
+}
+/*
+public class Newralnet{//https://www.youtube.com/watch?v=0itH0iDO8BE ,https://www.youtube.com/watch?v=SgBDx8DqBZw資料
+    private double[] weights= new double[0];// w0 , w1 , w2.....をまとめた配列  //ニューロンをオブジェクト化する設計ならいらない
+    private double lr = 0;
+    public double[] GetWeight(){
+        return weights;}
+public double GetLr(){
+    return lr;
+}
+
+//理解を深めるために、ニューロン一個一個をオブジェクトにしてみてはどうだろうか4/26
+
+
+
+    public void SetWeights(double[] weights)//GetWeightで出力してから配列の構造を確認してSetできるようにしてみる。gemini的には新しい拡張用のクラスを作った方がいいと言っているが、勉強のためなので直接いじれるようにしておく
+    {//dropoutを実装できるくらいのライブラリにしたい
+        this.weights = weights; 
+    }
+    public void SetLr(double lr){
+        this.lr = lr;
+    }
+
+}*/
+
+public class Neuron
+    {
+        private double[] weights;
+        public Neuron(double[] weights)//コンストラクタ
+    {
+        this.weights = weights;
+    }
+
+    public double DotProduct(double[] weights,Neuron[] neurons)//ここら辺のデザイン考えてる4/26　そもそも内積とか求めるためのmathクラスを実装する方がいいのではないか4/26
+    {
+
+        double dotproduct = 0;//未完成4/26　前の層と認識させる必要性あり、引き数にneuron　オブジェクトを格納した配列を入れてそこからforで取得していけばいい
+
+        return dotproduct;
+    }
+
+
+
+        
     }
 
 
@@ -170,7 +215,7 @@ public class Matrix
     public Matrix(double[,] data)
     {
         this.data = data;
-        this.rows = data.GetLength(0);
+        this.rows = data.GetLength(0);//大体理解
         this.cols = data.GetLength(1);
     }
 
@@ -204,7 +249,7 @@ public class Matrix
             for (int j = 0; j < other.cols; j++)  // 右の行列のヨコ移動
             {
                 double sum = 0;
-                for (int k = 0; k < this.cols; k++) // 内積（掛けて足す）ループ
+                for (int k = 0; k < this.cols; k++) // 内積（掛けて足す）ループ　理解
                 {
                     // 左の行列はヨコに進み(k)、右の行列はタテに進む(k)
                     sum += this.data[i, k] * other.data[k, j];
