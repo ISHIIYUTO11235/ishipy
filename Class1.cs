@@ -184,18 +184,66 @@ public double GetLr(){
 public class Neuron
     {
         private double[] weights;
-        public Neuron(double[] weights)//コンストラクタ
+        private double x;//値
+        private static Random random = new Random();
+        public Neuron(double[] weights)//コンストラクタ こっちは学習済みモデルなどでファインチューニングできる様に残しておく
     {
+        
         this.weights = weights;
     }
 
-    public double DotProduct(double[] weights,Neuron[] neurons)//ここら辺のデザイン考えてる4/26　そもそも内積とか求めるためのmathクラスを実装する方がいいのではないか4/26
+    public Neuron(int inputSize) //geminiに聞いたらコンストラクタは複数あっても可。引数によって自動的にコンストラクタが切り替わるそう
     {
+        // 入力されるデータの数だけ、重みの配列の枠を作る
+        this.weights = new double[inputSize];//heの初期値を使うためにインプットのサイズが必要なの
 
-        double dotproduct = 0;//未完成4/26　前の層と認識させる必要性あり、引き数にneuron　オブジェクトを格納した配列を入れてそこからforで取得していけばいい
+        for (int i = 0; i < inputSize; i++)
+        {
+            // 1. Box-Muller法による標準正規分布（平均0、分散1のきれいな山なりの乱数）の生成
+            double u1 = 1.0 - random.NextDouble(); // 0を弾くための微小な工夫
+            double u2 = 1.0 - random.NextDouble();
+            double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
+
+            // 2. Heの初期化の公式を適用: 正規分布の乱数 × √(2 / 入力データの数)
+            this.weights[i] = randStdNormal * Math.Sqrt(2.0 / inputSize);//0.0から1.0まで均等にだすのではだめ、正規分布で0付近が出やすく極端な数字を出づらくする
+        }
+    }
+
+
+public double[] GetWeights()
+    {
+        return weights;
+    }
+    public double GetX()
+    {
+        return x;
+    }
+
+    public void SetWeights(double weight,int num = 0)//numには何番目の重みを更新するか入れられる。デフォだと0
+    {
+        this.weights[num] = weight;//戻り値を返さないからvoid
+        
+
+        
+    }//https://qiita.com/masafumi_miya/items/640800cef813acf70caf 資料　内積
+
+    public double DotProduct(Neuron[] neurons)//ここら辺のデザイン考えてる4/26　そもそも内積とか求めるためのmathクラスを実装する方がいいのではないか4/26
+    {//DotProduct(ウェイトの行列,前の層のニューロンのオブジェクトを格納した配列)
+     double dotproduct = 0;//未完成4/26　前の層と認識させる必要性あり、引き数にneuron　オブジェクトを格納した配列を入れてそこからforで取得していけばいい
+    
+            for(int i =0; i< neurons.Length; i++)//ニューロンオブジェクトが持っている重みは、次の層のニューロンオブジェクトの数のぶんだけある。正面の重みをもっているイメージ
+            {
+                dotproduct += neurons[i].GetX() * neurons[i].GetWeights()[i];//x1*w1を　　
+                
+            }
+            
+  
+       
 
         return dotproduct;
     }
+
+
 
 
 
@@ -274,13 +322,13 @@ public class Matrix
         if (this.rows != this.cols) 
            Console.WriteLine("from Inverse method, 正方行列じゃないから逆行列を作れaません");
         
-        int n = this.rows;
+        int n = this.rows;//https://avilen.co.jp/personal/knowledge-article/inverse-matrix-outline/
         
         // 拡大係数行列を作る（左半分に元のデータ、右半分に「単位行列」をくっつける）
         double[,] a = new double[n, n * 2]; 
 
         // 初期化（右半分には、ナナメに「1」が並ぶ単位行列をセット ）
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < n; i++)//https://www.youtube.com/watch?v=gR2HHmETvyk
         {
             for (int j = 0; j < n; j++)
             {
