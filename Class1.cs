@@ -181,10 +181,34 @@ public double GetLr(){
 
 }*/
 
+/*
+Step 1: ニューロンの基礎計算（クリア！）
+
+He初期化、内積（DotProduct）のロジック構築。
+
+Step 2: 順伝播（Forward Propagation）の完成（←イマココ）4/28
+
+内積の結果に「活性化関数」を適用する処理を追加する。//昔のニューラルネットワークには存在しなかったはず、要らない。60点のニューラルネットワークでいいので完成させる
+
+複数のニューロンを束ねて、データが入力から出力まで流れるようにする。
+
+Step 3: 誤差関数（Loss Function）の計算
+
+最終的なAIの予測値と正解データのズレ（誤差）を計算する。
+
+Step 4: 誤差逆伝播法（Backpropagation）
+
+最大の山場です！微分のチェーンルール（連鎖律）を使って、出た誤差を出力側から入力側へ逆流させ、各重みの「修正すべき方向と量（勾配）」を計算します。
+
+Step 5: 重みの更新（Optimizer）
+
+計算された勾配と学習率（Learning Rate）を使って、実際の weights を書き換えてAIを賢くする。
+*/
+
 public class Neuron
     {
         private double[] weights;
-        private double x;//値
+        private double value;//値
         private static Random random = new Random();
         public Neuron(double[] weights)//コンストラクタ こっちは学習済みモデルなどでファインチューニングできる様に残しておく
     {
@@ -214,9 +238,13 @@ public double[] GetWeights()
     {
         return weights;
     }
-    public double GetX()
+    public double GetValue()
     {
-        return x;
+        return value;
+    }
+    public void SetValue(double value)
+    {
+        this.value = value;
     }
 
     public void SetWeights(double weight,int num = 0)//numには何番目の重みを更新するか入れられる。デフォだと0
@@ -227,13 +255,21 @@ public double[] GetWeights()
         
     }//https://qiita.com/masafumi_miya/items/640800cef813acf70caf 資料　内積
 
+    public void Activate(Neuron[] prevNeurons)
+    {
+        this.value = DotProduct(prevNeurons);
+    }//順伝播の実行　この関数をforでニューロンごとにやれば上手くいくはず
+
     public double DotProduct(Neuron[] neurons)//ここら辺のデザイン考えてる4/26　そもそも内積とか求めるためのmathクラスを実装する方がいいのではないか4/26
     {//DotProduct(ウェイトの行列,前の層のニューロンのオブジェクトを格納した配列)
      double dotproduct = 0;//未完成4/26　前の層と認識させる必要性あり、引き数にneuron　オブジェクトを格納した配列を入れてそこからforで取得していけばいい
     
             for(int i =0; i< neurons.Length; i++)//ニューロンオブジェクトが持っている重みは、次の層のニューロンオブジェクトの数のぶんだけある。正面の重みをもっているイメージ
             {
-                dotproduct += neurons[i].GetX() * neurons[i].GetWeights()[i];//x1*w1を　　
+                dotproduct += neurons[i].GetValue() * this.weights[i];//x1*w1を　　 本来は個々でバイアスも加算しなきゃいけないけどわからなくなるから一旦虫
+    
+
+
                 
             }
             
@@ -249,6 +285,59 @@ public double[] GetWeights()
 
         
     }
+
+public class Layer
+{
+    public Neuron[] Neurons { get; private set; }//セットできないようにする カスタム可能にしても良いが、一旦バグのもとになりそうなでprivateで
+//プロパティにオブジェクトがあるのがイメージしづらいというか使いづらい。改善の余地あり　ただカスタムはしやすいだろう。
+/*inputSize 前の層のニューロンの数、純伝播で使う
+neuronCount この層に配置したいニューロン数
+*/
+    public Layer(int inputSize, int neuronCount){//最初の層は前の入力がないので分からなくて　geminiに聞いたら普通にコンストラクタを分けちゃうしかないらしい
+        Neurons = new Neuron[neuronCount];
+        for(int i = 0; i < neuronCount; i++)
+        {
+            Neurons[i] = new Neuron(inputSize);
+        }
+
+    }
+
+    public Layer(double[] inputData)//初期層専用のコンストラクタ、前入力がないので最初のデータを打ち込みやすくする
+    {
+        Neurons = new Neuron[inputData.Length];  //inputDataに入れる 説明変数
+        for(int i = 0; i < inputData.Length; i++)
+        {
+            Neurons[i] = new Neuron(0);//前の層がないから重みを初期化
+            Neurons[i].SetValue(inputData[i]);//
+        }
+
+
+
+        
+    }//今気づいたけど設計がミスってる、ニューロンクラスは行列計算で行うべきだった。勉強だからとりあえず完成させる。かなり腑に落ちてきた
+
+    public void Forward(Layer prevLayer)
+    {
+        for(int i = 0; i< Neurons.Length; i++)
+        {
+            Neurons[i].Activate(prevLayer.Neurons);//ひとつづつのニューロンに順電波を適応させていく　//バイアスをまだニューロンクラス側で足していないので忘れないで5/6
+            
+        }
+    }//設計がミスりすぎている。現層のforはレイヤークラスで行っているのに前のレイヤーのニューロンを回すforはニューロンクラスで行っている。あとあとわけわからなくなりそう
+
+    public double[] GetOutputs()
+    {
+        double[] outputs = new double[Neurons.Length];
+        for (int i = 0; i < Neurons.Length; i++)
+        {
+            outputs[i] = Neurons[i].GetValue();
+        }
+        return outputs;
+    }
+
+
+    
+}
 
 
 
@@ -393,49 +482,19 @@ class Program//こっからてすとこーど
 {
     static void Main()
     {
-       /*
-        var model = new SimpleLinearRegression();
+       double[] testInput = { 2.0, 3.0 }; // 特徴量が2つのデータ
 
-        double[] xData = { 1.0, 2.0, 3.0, 4.0, 5.0 };
-        double[] yData = { 2.0, 4.0, 6.0, 8.0, 10.0 };//データがついになっていない場合はエラーがでる。例外処理はぐちゃぐちゃするので今のところあえて実装していない。
+// 2. ネットワークの構築
+Layer inputLayer = new Layer(testInput);         // 入力層（ニューロン2個）
+Layer hiddenLayer = new Layer(2, 3);             // 隠れ層（ニューロン3個、前の層は2個）
+Layer outputLayer = new Layer(3, 1);             // 出力層（ニューロン1個、前の層は3個）
 
-        model.Fit(xData, yData);
+// 3. 順伝播の実行（データが前へ前へと流れる！）
+hiddenLayer.Forward(inputLayer);                 // 隠れ層が入力層を見て更新！
+outputLayer.Forward(hiddenLayer);                // 出力層が隠れ層を見て更新！
 
-        Console.WriteLine($"計算されたXの平均値: {model.GetMeanX()}");
-        
-        Console.WriteLine(model.Predict(3.5));
-*/
-        var model = new MultipleRegression();
-
-        // テストデータ: X行列 [経過年数(年), 走行距離(万km)]
-        double[,] xData = {
-            { 20.0, 5.0 },  // 20年落ち, 5万km
-            { 25.0, 10.0 }, // 25年落ち, 10万km
-            { 15.0, 3.0 },  // 15年落ち, 3万km
-            { 30.0, 8.0 },  // 30年落ち, 8万km
-            { 22.0, 12.0 }  // 22年落ち, 12万km
-        };
-
-        // テストデータ: Y配列 [車両価格(万円)]
-        double[] yData = { 850.0, 600.0, 1100.0, 500.0, 480.0 };
-
-        Console.WriteLine("--- 重回帰分析の学習を開始 ---");
-        // 学習を実行（ここでMatrixクラスの逆行列や掛け算がフル稼働します！）
-        model.Fit(xData, yData);
-
-        // 学習結果（重み）を取得して表示
-        double[] w = model.GetWeight();
-        Console.WriteLine($"ベース価格・切片(w0) : {w[0]:F2} 万円");
-        Console.WriteLine($"経過年数の重み(w1)   : {w[1]:F2} 万円/年");
-        Console.WriteLine($"走行距離の重み(w2)   : {w[2]:F2} 万円/万km");
-
-        Console.WriteLine("\n--- 未知の車両価格を予測 ---");
-        // 新しいデータ: 24年落ち、走行距離 7万km の車両を見つけた場合
-        double[] targetCar = { 24.0, 7.0 };
-        double predictedPrice = model.Predict(targetCar);
-        
-        Console.WriteLine($"予測価格: {predictedPrice:F2} 万円");
-        
-        Console.ReadLine();
+// 4. 結果を見る
+double[] result = outputLayer.GetOutputs();
+Console.WriteLine($"AIの予測結果: {result[0]}");
     }
 }
